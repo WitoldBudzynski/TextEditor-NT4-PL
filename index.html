@@ -3,38 +3,81 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Drive Notepad</title>
+  <title>TextEditor NT4 PL</title>
   <style>
-    body { font-family: sans-serif; margin: 20px; display: flex; flex-direction: column; height: 90vh; background-color: #f4f5f7; }
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-    h2 { margin: 0; color: #333; }
-    #status { color: #555; font-style: italic; font-size: 14px; }
-    #text_editor { flex-grow: 1; margin: 10px 0; font-family: monospace; font-size: 14px; padding: 15px; border: 1px solid #ccc; border-radius: 4px; resize: none; }
-    .btn { padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold; margin-bottom: 5px; }
-    #authorize_btn { background-color: #4285F4; color: white; display: none; align-self: flex-start; }
+    body { 
+      font-family: sans-serif; 
+      margin: 0; 
+      padding: 20px; 
+      display: flex; 
+      flex-direction: column; 
+      min-height: 90vh; 
+      background-color: #f4f5f7; 
+      color: #333; 
+      box-sizing: border-box;
+    }
+    .header { margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #ccc; }
+    h1 { margin: 0; color: #2c3e50; }
+    .description { background-color: #fff; padding: 15px; border-radius: 4px; border: 1px solid #ddd; margin-bottom: 20px; line-height: 1.5; }
+    #status { font-style: italic; font-size: 14px; margin-top: 10px; color: #555; }
+    #app_interface { display: flex; flex-direction: column; flex-grow: 1; }
+    #text_editor { flex-grow: 1; margin: 10px 0; font-family: monospace; font-size: 14px; padding: 15px; border: 1px solid #ccc; border-radius: 4px; resize: none; min-height: 300px; }
+    .btn { padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold; margin-bottom: 5px; max-width: 300px;}
+    #authorize_btn { background-color: #4285F4; color: white; display: none; }
     #save_btn { background-color: #0F9D58; color: white; display: none; align-self: flex-start; }
-    #create_test_btn { background-color: #F4B400; color: white; display: none; align-self: flex-start; }
+    #create_test_btn { background-color: #F4B400; color: white; display: none; }
+    
+    /* Styl dla stopki (footer) */
+    footer {
+      margin-top: 30px;
+      padding-top: 15px;
+      border-top: 1px solid #ddd;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      color: #666;
+    }
+    footer .footer-links a {
+      color: #4285F4;
+      text-decoration: none;
+      margin-left: 20px;
+    }
+    footer .footer-links a:hover {
+      text-decoration: underline;
+    }
   </style>
   <script src="https://accounts.google.com/gsi/client" async defer onload="gisLoaded()"></script>
 </head>
 <body>
 
   <div class="header">
-    <h2>Notatnik Drive</h2>
-    <div id="status">Sprawdzanie linku z Google Drive...</div>
+    <h1>TextEditor NT4 PL</h1>
+    <div id="status">Inicjalizacja aplikacji...</div>
+  </div>
+
+  <div class="description" id="app_description">
+    <strong>O aplikacji:</strong> TextEditor NT4 PL to bezpłatne, działające w przeglądarce narzędzie, którego celem jest prosta i szybka edycja plików tekstowych (np. .txt, .json) bezpośrednio z Twojego Dysku Google.
   </div>
   
-  <button id="authorize_btn" class="btn">Połącz z kontem Google</button>
-  <button id="create_test_btn" class="btn">Wymuś integrację (Utwórz plik testowy na Dysku)</button>
+  <button id="authorize_btn" class="btn">Zaloguj przez Google, aby używać edytora</button>
+  <button id="create_test_btn" class="btn">Wymuś integrację z Dyskiem (Plik testowy)</button>
   
-  <textarea id="text_editor" style="display: none;" spellcheck="false"></textarea>
-  
-  <button id="save_btn" class="btn">Zapisz na Dysku</button>
+  <div id="app_interface">
+    <textarea id="text_editor" style="display: none;" spellcheck="false"></textarea>
+    <button id="save_btn" class="btn">Zapisz na Dysku</button>
+  </div>
+
+  <footer>
+    <div>&copy; 2026 TextEditor</div>
+    <div class="footer-links">
+      <a href="https://nt4.pl">nt4.pl</a>
+      <a href="privacy.html">Polityka prywatności</a>
+      <a href="terms.html">Regulamin usługi</a>
+    </div>
+  </footer>
 
   <script>
-    // ---------------------------------------------------------
-    // UWAGA: WKLEJ TUTAJ SWÓJ CLIENT_ID Z GOOGLE CLOUD CONSOLE
-    // ---------------------------------------------------------
     const CLIENT_ID = '422149545173-i34mnoatimakepct09vnl73pje63iq9f.apps.googleusercontent.com'; 
     const SCOPES = 'https://www.googleapis.com/auth/drive.file';
     
@@ -47,8 +90,8 @@
     const createTestBtn = document.getElementById('create_test_btn');
     const editor = document.getElementById('text_editor');
     const statusEl = document.getElementById('status');
+    const descEl = document.getElementById('app_description');
 
-    // 1. Pobranie ID pliku z URL
     const urlParams = new URLSearchParams(window.location.search);
     const stateParam = urlParams.get('state');
     
@@ -57,23 +100,21 @@
         const state = JSON.parse(stateParam);
         if (state.action === 'open') {
           fileId = state.ids[0];
-          statusEl.textContent = 'Znaleziono plik. Wymagane logowanie.';
+          statusEl.textContent = 'Znaleziono plik na Dysku.';
         }
       } catch (e) {
-        console.error("Błąd parsowania parametru state", e);
         statusEl.textContent = 'Błąd odczytu linku z Drive.';
       }
     } else {
-      statusEl.textContent = 'Aplikację należy otwierać z menu Dysku. Zaloguj się, aby wymusić integrację.';
+      statusEl.textContent = 'Aplikacja gotowa. Wejdź przez Dysk Google lub zaloguj się.';
     }
 
-    // 2. Inicjalizacja Google Identity Services (GIS)
     function gisLoaded() {
-      if (!CLIENT_ID || CLIENT_ID.includes('TUTAJ_WKLEJ')) {
-        statusEl.textContent = 'Brak skonfigurowanego CLIENT_ID w kodzie!';
+      if (!CLIENT_ID) {
+        statusEl.textContent = 'Błąd konfiguracji: Brak CLIENT_ID.';
         return;
       }
-
+      
       tokenClient = google.accounts.oauth2.initTokenClient({
         client_id: CLIENT_ID,
         scope: SCOPES,
@@ -83,30 +124,51 @@
             return;
           }
           accessToken = resp.access_token;
-          authorizeBtn.style.display = 'none';
           
-          if (fileId) {
-            editor.style.display = 'block';
-            saveBtn.style.display = 'block';
-            loadFile();
-          } else {
-            // Pokaż przycisk do tworzenia pliku, jeśli aplikacja odpalona z URL
-            createTestBtn.style.display = 'block';
-            statusEl.textContent = 'Zalogowano pomyślnie. Kliknij poniższy przycisk, aby zintegrować aplikację z Dyskiem.';
-          }
+          localStorage.setItem('drive_token', accessToken);
+          localStorage.setItem('drive_token_expires', Date.now() + 55 * 60 * 1000);
+          
+          showEditor();
         },
       });
-      
-      authorizeBtn.style.display = 'block';
+
+      checkSession();
     }
 
-    // 3. Pobranie pliku z Drive
+    function checkSession() {
+      const savedToken = localStorage.getItem('drive_token');
+      const tokenExpires = localStorage.getItem('drive_token_expires');
+
+      if (savedToken && tokenExpires && Date.now() < parseInt(tokenExpires)) {
+        accessToken = savedToken;
+        showEditor();
+      } else {
+        authorizeBtn.style.display = 'block';
+        statusEl.textContent += ' Wymagane logowanie.';
+      }
+    }
+
+    function showEditor() {
+      authorizeBtn.style.display = 'none';
+      descEl.style.display = 'none';
+      
+      if (fileId) {
+        editor.style.display = 'block';
+        saveBtn.style.display = 'block';
+        loadFile();
+      } else {
+        createTestBtn.style.display = 'block';
+        statusEl.textContent = 'Zalogowano pomyślnie. (Sesja aktywna)';
+      }
+    }
+
     function loadFile() {
       statusEl.textContent = 'Pobieranie zawartości...';
       fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
         headers: { 'Authorization': `Bearer ${accessToken}` }
       })
       .then(response => {
+        if (response.status === 401) throw new Error('Token wygasł');
         if (!response.ok) throw new Error('Nie udało się pobrać pliku');
         return response.text();
       })
@@ -115,39 +177,43 @@
         statusEl.textContent = 'Gotowy do edycji.';
       })
       .catch(error => {
-        console.error(error);
-        statusEl.textContent = 'Błąd podczas pobierania pliku z Drive.';
+        if (error.message === 'Token wygasł') {
+          localStorage.removeItem('drive_token');
+          localStorage.removeItem('drive_token_expires');
+          statusEl.textContent = 'Sesja wygasła. Zaloguj się ponownie.';
+          editor.style.display = 'none';
+          saveBtn.style.display = 'none';
+          authorizeBtn.style.display = 'block';
+        } else {
+          statusEl.textContent = 'Błąd podczas pobierania pliku.';
+        }
       });
     }
 
-    // 4. Zapis zmian na Drive
     function saveFile() {
       statusEl.textContent = 'Trwa zapisywanie...';
-      const content = editor.value;
-      
       fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'text/plain' 
         },
-        body: content
+        body: editor.value
       })
       .then(response => {
+        if (response.status === 401) throw new Error('Token wygasł');
         if (!response.ok) throw new Error('Błąd zapisu');
         return response.json();
       })
       .then(data => {
-        statusEl.textContent = 'Zmiany zapisane pomyślnie!';
+        statusEl.textContent = 'Zmiany zapisane pomyślnie na Dysku Google!';
         setTimeout(() => statusEl.textContent = 'Gotowy do edycji.', 3000);
       })
       .catch(error => {
-        console.error(error);
         statusEl.textContent = 'Zapis nie powiódł się.';
       });
     }
-
-    // 5. Tworzenie pliku testowego (wymuszające instalację w Dysku)
+    
     function createTestFile() {
       statusEl.textContent = 'Tworzenie pliku testowego...';
       fetch('https://www.googleapis.com/drive/v3/files', {
@@ -166,7 +232,7 @@
         return resp.json();
       })
       .then(data => {
-        statusEl.textContent = 'Plik utworzony! Odśwież Dysk Google. Aplikacja powinna pojawić się w menu "Otwórz za pomocą".';
+        statusEl.textContent = 'Plik utworzony! Odśwież Dysk Google. Aplikacja powinności pojawić się w menu "Otwórz za pomocą".';
         createTestBtn.style.display = 'none';
       })
       .catch(err => {
@@ -175,7 +241,7 @@
       });
     }
 
-    authorizeBtn.onclick = () => tokenClient.requestAccessToken({prompt: 'consent'});
+    authorizeBtn.onclick = () => tokenClient.requestAccessToken();
     saveBtn.onclick = saveFile;
     createTestBtn.onclick = createTestFile;
   </script>

@@ -10,9 +10,10 @@
     h2 { margin: 0; color: #333; }
     #status { color: #555; font-style: italic; font-size: 14px; }
     #text_editor { flex-grow: 1; margin: 10px 0; font-family: monospace; font-size: 14px; padding: 15px; border: 1px solid #ccc; border-radius: 4px; resize: none; }
-    .btn { padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold; }
+    .btn { padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold; margin-bottom: 5px; }
     #authorize_btn { background-color: #4285F4; color: white; display: none; align-self: flex-start; }
     #save_btn { background-color: #0F9D58; color: white; display: none; align-self: flex-start; }
+    #create_test_btn { background-color: #F4B400; color: white; display: none; align-self: flex-start; }
   </style>
   <script src="https://accounts.google.com/gsi/client" async defer onload="gisLoaded()"></script>
 </head>
@@ -23,8 +24,11 @@
     <div id="status">Sprawdzanie linku z Google Drive...</div>
   </div>
   
-  <button id="authorize_btn" class="btn">Połącz z kontem Google, aby edytować</button>
+  <button id="authorize_btn" class="btn">Połącz z kontem Google</button>
+  <button id="create_test_btn" class="btn">Wymuś integrację (Utwórz plik testowy na Dysku)</button>
+  
   <textarea id="text_editor" style="display: none;" spellcheck="false"></textarea>
+  
   <button id="save_btn" class="btn">Zapisz na Dysku</button>
 
   <script>
@@ -40,6 +44,7 @@
 
     const authorizeBtn = document.getElementById('authorize_btn');
     const saveBtn = document.getElementById('save_btn');
+    const createTestBtn = document.getElementById('create_test_btn');
     const editor = document.getElementById('text_editor');
     const statusEl = document.getElementById('status');
 
@@ -59,7 +64,7 @@
         statusEl.textContent = 'Błąd odczytu linku z Drive.';
       }
     } else {
-      statusEl.textContent = 'Aplikację należy otwierać bezpośrednio z menu Dysku Google.';
+      statusEl.textContent = 'Aplikację należy otwierać z menu Dysku. Zaloguj się, aby wymusić integrację.';
     }
 
     // 2. Inicjalizacja Google Identity Services (GIS)
@@ -79,16 +84,20 @@
           }
           accessToken = resp.access_token;
           authorizeBtn.style.display = 'none';
-          editor.style.display = 'block';
-          saveBtn.style.display = 'block';
           
-          if (fileId) loadFile();
+          if (fileId) {
+            editor.style.display = 'block';
+            saveBtn.style.display = 'block';
+            loadFile();
+          } else {
+            // Pokaż przycisk do tworzenia pliku, jeśli aplikacja odpalona z URL
+            createTestBtn.style.display = 'block';
+            statusEl.textContent = 'Zalogowano pomyślnie. Kliknij poniższy przycisk, aby zintegrować aplikację z Dyskiem.';
+          }
         },
       });
       
-      if (fileId) {
-        authorizeBtn.style.display = 'block';
-      }
+      authorizeBtn.style.display = 'block';
     }
 
     // 3. Pobranie pliku z Drive
@@ -116,7 +125,6 @@
       statusEl.textContent = 'Trwa zapisywanie...';
       const content = editor.value;
       
-      // Prosty tekst / JSON można wysłać za pomocą uploadu typu 'media' jako PATCH
       fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, {
         method: 'PATCH',
         headers: {
@@ -139,8 +147,37 @@
       });
     }
 
+    // 5. Tworzenie pliku testowego (wymuszające instalację w Dysku)
+    function createTestFile() {
+      statusEl.textContent = 'Tworzenie pliku testowego...';
+      fetch('https://www.googleapis.com/drive/v3/files', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: 'Test_Notatnika_Instalacja.txt',
+          mimeType: 'text/plain'
+        })
+      })
+      .then(resp => {
+        if (!resp.ok) throw new Error('Błąd tworzenia pliku');
+        return resp.json();
+      })
+      .then(data => {
+        statusEl.textContent = 'Plik utworzony! Odśwież Dysk Google. Aplikacja powinna pojawić się w menu "Otwórz za pomocą".';
+        createTestBtn.style.display = 'none';
+      })
+      .catch(err => {
+        console.error(err);
+        statusEl.textContent = 'Błąd podczas tworzenia pliku.';
+      });
+    }
+
     authorizeBtn.onclick = () => tokenClient.requestAccessToken({prompt: 'consent'});
     saveBtn.onclick = saveFile;
+    createTestBtn.onclick = createTestFile;
   </script>
 </body>
 </html>

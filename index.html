@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pl">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -53,27 +53,27 @@
 
   <div class="header">
     <h1>TextEditor NT4 PL</h1>
-    <div id="status">Inicjalizacja aplikacji...</div>
+    <div id="status">Initializing the application...</div>
   </div>
 
   <div class="description" id="app_description">
-    <strong>O aplikacji:</strong> TextEditor NT4 PL to bezpłatne, działające w przeglądarce narzędzie, którego celem jest prosta i szybka edycja plików tekstowych (np. .txt, .json) bezpośrednio z Twojego Dysku Google.
+    <strong>About the application:</strong> TextEditor NT4 PL is a free, browser-based tool designed for simple and quick editing of text files (e.g. .txt, .json) directly from your Google Drive.
   </div>
   
-  <button id="authorize_btn" class="btn">Zaloguj przez Google, aby używać edytora</button>
-  <button id="create_test_btn" class="btn">Wymuś integrację z Dyskiem (Plik testowy)</button>
+  <button id="authorize_btn" class="btn">Sign in with Google to use the editor</button>
+  <button id="create_test_btn" class="btn">Enable Drive integration (Test file)</button>
   
   <div id="app_interface">
     <textarea id="text_editor" style="display: none;" spellcheck="false"></textarea>
-    <button id="save_btn" class="btn">Zapisz na Dysku</button>
+    <button id="save_btn" class="btn">Save to Drive</button>
   </div>
 
   <footer>
     <div>&copy; 2026 TextEditor</div>
     <div class="footer-links">
       <a href="https://nt4.pl">nt4.pl</a>
-      <a href="privacy.html">Polityka prywatności</a>
-      <a href="terms.html">Regulamin usługi</a>
+      <a href="privacy.html">Privacy Policy</a>
+      <a href="terms.html">Terms of Service</a>
     </div>
   </footer>
 
@@ -100,18 +100,18 @@
         const state = JSON.parse(stateParam);
         if (state.action === 'open') {
           fileId = state.ids[0];
-          statusEl.textContent = 'Znaleziono plik na Dysku.';
+          statusEl.textContent = 'File found on Drive.';
         }
       } catch (e) {
-        statusEl.textContent = 'Błąd odczytu linku z Drive.';
+        statusEl.textContent = 'Unable to read the Drive link.';
       }
     } else {
-      statusEl.textContent = 'Aplikacja gotowa. Wejdź przez Dysk Google lub zaloguj się.';
+      statusEl.textContent = 'The application is ready. Open it from Google Drive or sign in.';
     }
 
     function gisLoaded() {
       if (!CLIENT_ID) {
-        statusEl.textContent = 'Błąd konfiguracji: Brak CLIENT_ID.';
+        statusEl.textContent = 'Configuration error: CLIENT_ID is missing.';
         return;
       }
       
@@ -120,7 +120,7 @@
         scope: SCOPES,
         callback: (resp) => {
           if (resp.error) {
-            statusEl.textContent = 'Odmowa dostępu.';
+            statusEl.textContent = 'Access denied.';
             return;
           }
           accessToken = resp.access_token;
@@ -144,7 +144,7 @@
         showEditor();
       } else {
         authorizeBtn.style.display = 'block';
-        statusEl.textContent += ' Wymagane logowanie.';
+        statusEl.textContent += ' Sign-in required.';
       }
     }
 
@@ -158,40 +158,40 @@
         loadFile();
       } else {
         createTestBtn.style.display = 'block';
-        statusEl.textContent = 'Zalogowano pomyślnie. (Sesja aktywna)';
+        statusEl.textContent = 'Signed in successfully. (Session active)';
       }
     }
 
     function loadFile() {
-      statusEl.textContent = 'Pobieranie zawartości...';
+      statusEl.textContent = 'Loading content...';
       fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
         headers: { 'Authorization': `Bearer ${accessToken}` }
       })
       .then(response => {
-        if (response.status === 401) throw new Error('Token wygasł');
-        if (!response.ok) throw new Error('Nie udało się pobrać pliku');
+        if (response.status === 401) throw new Error('Token expired');
+        if (!response.ok) throw new Error('Unable to download the file');
         return response.text();
       })
       .then(text => {
         editor.value = text;
-        statusEl.textContent = 'Gotowy do edycji.';
+        statusEl.textContent = 'Ready to edit.';
       })
       .catch(error => {
-        if (error.message === 'Token wygasł') {
+        if (error.message === 'Token expired') {
           localStorage.removeItem('drive_token');
           localStorage.removeItem('drive_token_expires');
-          statusEl.textContent = 'Sesja wygasła. Zaloguj się ponownie.';
+          statusEl.textContent = 'Your session has expired. Please sign in again.';
           editor.style.display = 'none';
           saveBtn.style.display = 'none';
           authorizeBtn.style.display = 'block';
         } else {
-          statusEl.textContent = 'Błąd podczas pobierania pliku.';
+          statusEl.textContent = 'An error occurred while downloading the file.';
         }
       });
     }
 
     function saveFile() {
-      statusEl.textContent = 'Trwa zapisywanie...';
+      statusEl.textContent = 'Saving...';
       fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, {
         method: 'PATCH',
         headers: {
@@ -201,21 +201,21 @@
         body: editor.value
       })
       .then(response => {
-        if (response.status === 401) throw new Error('Token wygasł');
-        if (!response.ok) throw new Error('Błąd zapisu');
+        if (response.status === 401) throw new Error('Token expired');
+        if (!response.ok) throw new Error('Save error');
         return response.json();
       })
       .then(data => {
-        statusEl.textContent = 'Zmiany zapisane pomyślnie na Dysku Google!';
-        setTimeout(() => statusEl.textContent = 'Gotowy do edycji.', 3000);
+        statusEl.textContent = 'Changes saved successfully to Google Drive!';
+        setTimeout(() => statusEl.textContent = 'Ready to edit.', 3000);
       })
       .catch(error => {
-        statusEl.textContent = 'Zapis nie powiódł się.';
+        statusEl.textContent = 'Save failed.';
       });
     }
     
     function createTestFile() {
-      statusEl.textContent = 'Tworzenie pliku testowego...';
+      statusEl.textContent = 'Creating a test file...';
       fetch('https://www.googleapis.com/drive/v3/files', {
         method: 'POST',
         headers: {
@@ -223,21 +223,21 @@
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          name: 'Test_Notatnika_Instalacja.txt',
+          name: 'Notepad_Installation_Test.txt',
           mimeType: 'text/plain'
         })
       })
       .then(resp => {
-        if (!resp.ok) throw new Error('Błąd tworzenia pliku');
+        if (!resp.ok) throw new Error('File creation error');
         return resp.json();
       })
       .then(data => {
-        statusEl.textContent = 'Plik utworzony! Odśwież Dysk Google. Aplikacja powinności pojawić się w menu "Otwórz za pomocą".';
+        statusEl.textContent = 'File created! Refresh Google Drive. The application should appear in the "Open with" menu.';
         createTestBtn.style.display = 'none';
       })
       .catch(err => {
         console.error(err);
-        statusEl.textContent = 'Błąd podczas tworzenia pliku.';
+        statusEl.textContent = 'An error occurred while creating the file.';
       });
     }
 
